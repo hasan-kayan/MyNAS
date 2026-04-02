@@ -1,0 +1,224 @@
+syntax = "proto3";
+
+package raos.auth.v1;
+
+option go_package = "github.com/Raos-Health/auth_service/api/authpb;authpb";
+
+// =========================
+// Authentication Service
+// =========================
+
+service AuthenticationService {
+
+  // --- Authentication ---
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // --- Token Management ---
+  rpc VerifyAccessToken(VerifyAccessTokenRequest) returns (VerifyAccessTokenResponse);
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+  rpc RevokeAllUserTokens(RevokeAllUserTokensRequest) returns (RevokeAllUserTokensResponse);
+
+  // --- Password Operations ---
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+
+  // --- MFA ---
+  rpc RequestMFAChallenge(RequestMFAChallengeRequest) returns (RequestMFAChallengeResponse);
+  rpc VerifyMFAChallenge(VerifyMFAChallengeRequest) returns (VerifyMFAChallengeResponse);
+
+  // --- Service Authentication ---
+  rpc ServiceLogin(ServiceLoginRequest) returns (ServiceLoginResponse);
+
+  // --- Public Key Discovery ---
+  rpc GetJWKS(GetJWKSRequest) returns (GetJWKSResponse);
+}
+
+// =========================
+// AUTHENTICATION
+// =========================
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string device_id = 3;
+  string ip_address = 4;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_in = 3;
+  int64 refresh_expires_in = 4;
+  string token_type = 5; // "Bearer"
+
+  bool mfa_required = 6;
+  string challenge_id = 7; // present if MFA required
+}
+
+// =========================
+// REFRESH TOKEN
+// =========================
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  string device_id = 2;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_in = 3;
+  int64 refresh_expires_in = 4;
+  string token_type = 5;
+}
+
+// =========================
+// LOGOUT
+// =========================
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+// =========================
+// TOKEN VALIDATION
+// =========================
+
+message VerifyAccessTokenRequest {
+  string access_token = 1;
+}
+
+message VerifyAccessTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string token_id = 3;
+  int64 expires_at = 4;
+}
+
+message IntrospectTokenRequest {
+  string access_token = 1;
+}
+
+message IntrospectTokenResponse {
+  string user_id = 1;
+  string token_id = 2;
+  string token_type = 3;
+  int64 issued_at = 4;
+  int64 expires_at = 5;
+  bool active = 6;
+}
+
+// =========================
+// REVOCATION
+// =========================
+
+message RevokeTokenRequest {
+  string token_id = 1;
+}
+
+message RevokeTokenResponse {
+  bool success = 1;
+}
+
+message RevokeAllUserTokensRequest {
+  string user_id = 1;
+}
+
+message RevokeAllUserTokensResponse {
+  bool success = 1;
+}
+
+// =========================
+// PASSWORD MANAGEMENT
+// =========================
+
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ForgotPasswordResponse {
+  bool success = 1;
+}
+
+message ResetPasswordRequest {
+  string reset_token = 1;
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+}
+
+// =========================
+// MFA
+// =========================
+
+message RequestMFAChallengeRequest {
+  string user_id = 1;
+}
+
+message RequestMFAChallengeResponse {
+  string challenge_id = 1;
+  int64 expires_in = 2;
+}
+
+message VerifyMFAChallengeRequest {
+  string challenge_id = 1;
+  string code = 2;
+}
+
+message VerifyMFAChallengeResponse {
+  bool success = 1;
+}
+
+// =========================
+// SERVICE AUTH
+// =========================
+
+message ServiceLoginRequest {
+  string client_id = 1;
+  string client_secret = 2;
+  string audience = 3;
+}
+
+message ServiceLoginResponse {
+  string access_token = 1;
+  int64 access_expires_in = 2;
+  string token_type = 3;
+}
+
+// =========================
+// JWKS
+// =========================
+
+message GetJWKSRequest {}
+
+message GetJWKSResponse {
+  repeated JWK keys = 1;
+}
+
+message JWK {
+  string kty = 1;
+  string kid = 2;
+  string alg = 3;
+  string use = 4;
+  string n = 5;   // RSA modulus
+  string e = 6;   // RSA exponent
+}
